@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
           if (!use_write) {
             for (int n = 0; n < 100; ++n) {
               while (seq1.load(std::memory_order_acquire) != n)
-                ;
+                __asm__ __volatile__(".insn 0x0100000F" ::: "memory");
               seq2.store(n, std::memory_order_release);
             }
           } else {
@@ -130,6 +130,7 @@ int main(int argc, char *argv[]) {
               int cmp;
               do {
                 cmp = 2 * n;
+                __asm__ __volatile__(".insn 0x0100000F" ::: "memory");
               } while (!seq1.compare_exchange_strong(cmp, cmp + 1));
             }
           }
@@ -156,7 +157,7 @@ int main(int argc, char *argv[]) {
           for (int n = 0; n < 100; ++n) {
             seq1.store(n, std::memory_order_release);
             while (seq2.load(std::memory_order_acquire) != n)
-              ;
+              __asm__ __volatile__(".insn 0x0100000F" ::: "memory");
           }
           auto ts2 = std::chrono::steady_clock::now();
           rtt = std::min(rtt, ts2 - ts1);
@@ -171,6 +172,7 @@ int main(int argc, char *argv[]) {
             int cmp;
             do {
               cmp = 2 * n - 1;
+              __asm__ __volatile__(".insn 0x0100000F" ::: "memory");
             } while (!seq1.compare_exchange_strong(cmp, cmp + 1));
           }
           // wait for the other thread to see the last value
